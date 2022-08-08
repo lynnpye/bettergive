@@ -9,6 +9,7 @@ import com.mojang.brigadier.suggestion.SuggestionProvider;
 import net.minecraft.command.CommandSource;
 import net.minecraft.command.Commands;
 import net.minecraft.command.arguments.*;
+import net.minecraft.command.impl.GiveCommand;
 import net.minecraft.entity.item.ItemEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.item.ItemStack;
@@ -79,53 +80,6 @@ public class BetterGiveCommandHandler {
         final Collection<ServerPlayerEntity> serverPlayerEntities = EntityArgument.getPlayers(context, ARG_players);
         final CommandSource source = context.getSource();
 
-        for (ServerPlayerEntity serverPlayerEntity : serverPlayerEntities) {
-            for (int i = count; i > 0;) {
-                ItemStack itemStack = itemInput.createItemStack(1, false);
-                int stackSize = Math.min(itemStack.getMaxStackSize(), i);
-                i -= stackSize;
-                itemStack.setCount(stackSize);
-                if (serverPlayerEntity.inventory.add(itemStack) && itemStack.isEmpty()) {
-                    itemStack.setCount(1);
-                    ItemEntity itemEntity = serverPlayerEntity.drop(itemStack, false);
-                    if (itemEntity != null) {
-                        itemEntity.makeFakeItem();
-                    }
-
-                    serverPlayerEntity.level.playSound(null, serverPlayerEntity.getX(), serverPlayerEntity.getY(), serverPlayerEntity.getZ(), SoundEvents.ITEM_PICKUP,
-                            SoundCategory.PLAYERS, 0.2f,
-                            ((serverPlayerEntity.getRandom().nextFloat() - serverPlayerEntity.getRandom().nextFloat()) * 0.7F + 1.0F) * 2.0F);
-                    serverPlayerEntity.inventoryMenu.broadcastChanges();
-                } else {
-                    ItemEntity itemEntity = serverPlayerEntity.drop(itemStack, false);
-                    if (itemEntity != null) {
-                        itemEntity.setNoPickUpDelay();
-                        itemEntity.setOwner(serverPlayerEntity.getUUID());
-                    }
-                }
-            }
-        }
-
-        if (serverPlayerEntities.size() == 1) {
-            source.sendSuccess(
-                    new TranslationTextComponent(
-                            "commands.give.success.single",
-                            count,
-                            itemInput.createItemStack(count, false).getDisplayName(),
-                            serverPlayerEntities.iterator().next().getDisplayName())
-                    , true
-            );
-        } else {
-            source.sendSuccess(
-                    new TranslationTextComponent(
-                            "commands.give.success.single",
-                            count,
-                            itemInput.createItemStack(count, false).getDisplayName(),
-                            serverPlayerEntities.size()),
-                    true
-            );
-        }
-
-        return serverPlayerEntities.size();
+        return GiveCommand.giveItem(source, itemInput, serverPlayerEntities, count);
     }
 }
