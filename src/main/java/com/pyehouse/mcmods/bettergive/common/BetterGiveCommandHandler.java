@@ -6,16 +6,18 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
-import net.minecraft.command.CommandSource;
-import net.minecraft.command.Commands;
-import net.minecraft.command.arguments.*;
-import net.minecraft.entity.item.ItemEntity;
-import net.minecraft.entity.player.ServerPlayerEntity;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.SoundCategory;
-import net.minecraft.util.SoundEvents;
-import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.commands.Commands;
+import net.minecraft.commands.arguments.EntityArgument;
+import net.minecraft.commands.arguments.item.ItemArgument;
+import net.minecraft.commands.arguments.item.ItemInput;
+import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.registries.ForgeRegistries;
@@ -34,13 +36,13 @@ public class BetterGiveCommandHandler {
 
     @SubscribeEvent
     public static void onRegisterCommand(RegisterCommandsEvent event) {
-        final CommandDispatcher<CommandSource> dispatcher = event.getDispatcher();
+        final CommandDispatcher<CommandSourceStack> dispatcher = event.getDispatcher();
 
         dispatcher.register(makeBetterGiveCommand(CMD_bgive));
         dispatcher.register(makeBetterGiveCommand(CMD_bettergive));
     }
 
-    private static LiteralArgumentBuilder<CommandSource> makeBetterGiveCommand(String commandString) {
+    private static LiteralArgumentBuilder<CommandSourceStack> makeBetterGiveCommand(String commandString) {
         return Commands
             .literal(commandString)
             .requires((commandSource) -> commandSource.hasPermission(2))
@@ -60,7 +62,7 @@ public class BetterGiveCommandHandler {
             ;
     }
 
-    private static SuggestionProvider<CommandSource> createSuggester() {
+    private static SuggestionProvider<CommandSourceStack> createSuggester() {
         return (context, builder) -> {
             String stringRemainder = builder.getRemaining().toLowerCase(Locale.ROOT);
             for (ResourceLocation resourceLocation : ForgeRegistries.ITEMS.getKeys()) {
@@ -74,18 +76,18 @@ public class BetterGiveCommandHandler {
         };
     }
 
-    private static int betterGiveItem(CommandContext<CommandSource> context, int count) throws CommandSyntaxException {
+    private static int betterGiveItem(CommandContext<CommandSourceStack> context, int count) throws CommandSyntaxException {
         final ItemInput itemInput = ItemArgument.getItem(context, ARG_item);
-        final Collection<ServerPlayerEntity> serverPlayerEntities = EntityArgument.getPlayers(context, ARG_players);
-        final CommandSource source = context.getSource();
+        final Collection<ServerPlayer> serverPlayerEntities = EntityArgument.getPlayers(context, ARG_players);
+        final CommandSourceStack source = context.getSource();
 
-        for (ServerPlayerEntity serverPlayerEntity : serverPlayerEntities) {
+        for (ServerPlayer serverPlayerEntity : serverPlayerEntities) {
             for (int i = count; i > 0;) {
                 ItemStack itemStack = itemInput.createItemStack(1, false);
                 int stackSize = Math.min(itemStack.getMaxStackSize(), i);
                 i -= stackSize;
                 itemStack.setCount(stackSize);
-                if (serverPlayerEntity.inventory.add(itemStack) && itemStack.isEmpty()) {
+                if (serverPlayerEntity.getInventory().add(itemStack) && itemStack.isEmpty()) {
                     itemStack.setCount(1);
                     ItemEntity itemEntity = serverPlayerEntity.drop(itemStack, false);
                     if (itemEntity != null) {
@@ -93,7 +95,7 @@ public class BetterGiveCommandHandler {
                     }
 
                     serverPlayerEntity.level.playSound(null, serverPlayerEntity.getX(), serverPlayerEntity.getY(), serverPlayerEntity.getZ(), SoundEvents.ITEM_PICKUP,
-                            SoundCategory.PLAYERS, 0.2f,
+                            SoundSource.PLAYERS, 0.2f,
                             ((serverPlayerEntity.getRandom().nextFloat() - serverPlayerEntity.getRandom().nextFloat()) * 0.7F + 1.0F) * 2.0F);
                     serverPlayerEntity.inventoryMenu.broadcastChanges();
                 } else {
@@ -108,7 +110,7 @@ public class BetterGiveCommandHandler {
 
         if (serverPlayerEntities.size() == 1) {
             source.sendSuccess(
-                    new TranslationTextComponent(
+                    new TranslatableComponent(
                             "commands.give.success.single",
                             count,
                             itemInput.createItemStack(count, false).getDisplayName(),
@@ -117,7 +119,7 @@ public class BetterGiveCommandHandler {
             );
         } else {
             source.sendSuccess(
-                    new TranslationTextComponent(
+                    new TranslatableComponent(
                             "commands.give.success.single",
                             count,
                             itemInput.createItemStack(count, false).getDisplayName(),
