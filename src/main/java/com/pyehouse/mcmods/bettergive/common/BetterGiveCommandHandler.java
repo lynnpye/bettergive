@@ -11,17 +11,16 @@ import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.commands.arguments.item.ItemArgument;
 import net.minecraft.commands.arguments.item.ItemInput;
-import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.commands.GiveCommand;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.sounds.SoundEvents;
-import net.minecraft.sounds.SoundSource;
-import net.minecraft.world.entity.item.ItemEntity;
-import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.util.ObfuscationReflectionHelper;
 import net.minecraftforge.registries.ForgeRegistries;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.Locale;
 
@@ -81,53 +80,15 @@ public class BetterGiveCommandHandler {
         final Collection<ServerPlayer> serverPlayerEntities = EntityArgument.getPlayers(context, ARG_players);
         final CommandSourceStack source = context.getSource();
 
-        for (ServerPlayer serverPlayerEntity : serverPlayerEntities) {
-            for (int i = count; i > 0;) {
-                ItemStack itemStack = itemInput.createItemStack(1, false);
-                int stackSize = Math.min(itemStack.getMaxStackSize(), i);
-                i -= stackSize;
-                itemStack.setCount(stackSize);
-                if (serverPlayerEntity.getInventory().add(itemStack) && itemStack.isEmpty()) {
-                    itemStack.setCount(1);
-                    ItemEntity itemEntity = serverPlayerEntity.drop(itemStack, false);
-                    if (itemEntity != null) {
-                        itemEntity.makeFakeItem();
-                    }
-
-                    serverPlayerEntity.level.playSound(null, serverPlayerEntity.getX(), serverPlayerEntity.getY(), serverPlayerEntity.getZ(), SoundEvents.ITEM_PICKUP,
-                            SoundSource.PLAYERS, 0.2f,
-                            ((serverPlayerEntity.getRandom().nextFloat() - serverPlayerEntity.getRandom().nextFloat()) * 0.7F + 1.0F) * 2.0F);
-                    serverPlayerEntity.inventoryMenu.broadcastChanges();
-                } else {
-                    ItemEntity itemEntity = serverPlayerEntity.drop(itemStack, false);
-                    if (itemEntity != null) {
-                        itemEntity.setNoPickUpDelay();
-                        itemEntity.setOwner(serverPlayerEntity.getUUID());
-                    }
-                }
-            }
+        int result = 0;
+        try {
+            Class<GiveCommand> giveCommandClass = GiveCommand.class;
+            Method giveItemMethod = ObfuscationReflectionHelper.findMethod(giveCommandClass, "giveItem", CommandSourceStack.class, ItemInput.class, Collection.class, int.class);
+            result = (int) giveItemMethod.invoke(null, source, itemInput, serverPlayerEntities, count);
+        } catch (InvocationTargetException | IllegalAccessException e) {
+            e.printStackTrace();
         }
 
-        if (serverPlayerEntities.size() == 1) {
-            source.sendSuccess(
-                    new TranslatableComponent(
-                            "commands.give.success.single",
-                            count,
-                            itemInput.createItemStack(count, false).getDisplayName(),
-                            serverPlayerEntities.iterator().next().getDisplayName())
-                    , true
-            );
-        } else {
-            source.sendSuccess(
-                    new TranslatableComponent(
-                            "commands.give.success.single",
-                            count,
-                            itemInput.createItemStack(count, false).getDisplayName(),
-                            serverPlayerEntities.size()),
-                    true
-            );
-        }
-
-        return serverPlayerEntities.size();
+        return result;
     }
 }
