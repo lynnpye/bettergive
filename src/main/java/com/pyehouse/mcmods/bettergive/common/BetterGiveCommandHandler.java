@@ -6,6 +6,7 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
+import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.EntityArgument;
@@ -37,18 +38,18 @@ public class BetterGiveCommandHandler {
     public static void onRegisterCommand(RegisterCommandsEvent event) {
         final CommandDispatcher<CommandSourceStack> dispatcher = event.getDispatcher();
 
-        dispatcher.register(makeBetterGiveCommand(CMD_bgive));
-        dispatcher.register(makeBetterGiveCommand(CMD_bettergive));
+        dispatcher.register(makeBetterGiveCommand(CMD_bgive, event.getBuildContext()));
+        dispatcher.register(makeBetterGiveCommand(CMD_bettergive, event.getBuildContext()));
     }
 
-    private static LiteralArgumentBuilder<CommandSourceStack> makeBetterGiveCommand(String commandString) {
+    private static LiteralArgumentBuilder<CommandSourceStack> makeBetterGiveCommand(String commandString, CommandBuildContext buildContext) {
         return Commands
             .literal(commandString)
             .requires((commandSource) -> commandSource.hasPermission(2))
             .then(
                 Commands.argument(ARG_players, EntityArgument.players())
                     .then(
-                        Commands.argument(ARG_item, ItemArgument.item())
+                        Commands.argument(ARG_item, ItemArgument.item(buildContext))
                                     .suggests(createSuggester())
                                     .executes(context -> betterGiveItem(context, 1))
                                 .then(
