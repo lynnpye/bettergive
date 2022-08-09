@@ -10,17 +10,15 @@ import net.minecraft.command.CommandSource;
 import net.minecraft.command.Commands;
 import net.minecraft.command.arguments.*;
 import net.minecraft.command.impl.GiveCommand;
-import net.minecraft.entity.item.ItemEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
-import net.minecraft.item.ItemStack;
 import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.SoundCategory;
-import net.minecraft.util.SoundEvents;
-import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
 import net.minecraftforge.registries.ForgeRegistries;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.Locale;
 
@@ -80,6 +78,15 @@ public class BetterGiveCommandHandler {
         final Collection<ServerPlayerEntity> serverPlayerEntities = EntityArgument.getPlayers(context, ARG_players);
         final CommandSource source = context.getSource();
 
-        return GiveCommand.giveItem(source, itemInput, serverPlayerEntities, count);
+        int result = 0;
+        try {
+            Class<GiveCommand> giveCommandClass = GiveCommand.class;
+            Method giveItemMethod = ObfuscationReflectionHelper.findMethod(giveCommandClass, "giveItem", CommandSource.class, ItemInput.class, Collection.class, int.class);
+            result = (int) giveItemMethod.invoke(null, source, itemInput, serverPlayerEntities, count);
+        } catch (InvocationTargetException | IllegalAccessException e) {
+            e.printStackTrace();
+        }
+
+        return result;
     }
 }
