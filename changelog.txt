@@ -1,3 +1,7 @@
+1.18-1.1
+    hextun01
+        Fixed use of ObfuscationReflectionHelper to use SRG names, as nature intended
+========
 1.18-1.0
 	hextun01
 		Initial release
