@@ -81,7 +81,8 @@ public class BetterGiveCommandHandler {
         int result = 0;
         try {
             Class<GiveCommand> giveCommandClass = GiveCommand.class;
-            Method giveItemMethod = ObfuscationReflectionHelper.findMethod(giveCommandClass, "giveItem", CommandSource.class, ItemInput.class, Collection.class, int.class);
+            // SRG name: func_198497_a(Lnet/minecraft/command/CommandSource;Lnet/minecraft/command/arguments/ItemInput;Ljava/util/Collection;I)I
+            Method giveItemMethod = ObfuscationReflectionHelper.findMethod(giveCommandClass, "func_198497_a", CommandSource.class, ItemInput.class, Collection.class, int.class);
             result = (int) giveItemMethod.invoke(null, source, itemInput, serverPlayerEntities, count);
         } catch (InvocationTargetException | IllegalAccessException e) {
             e.printStackTrace();
