@@ -8,7 +8,9 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
 import net.minecraft.command.CommandSource;
 import net.minecraft.command.Commands;
-import net.minecraft.command.arguments.*;
+import net.minecraft.command.arguments.EntityArgument;
+import net.minecraft.command.arguments.ItemArgument;
+import net.minecraft.command.arguments.ItemInput;
 import net.minecraft.command.impl.GiveCommand;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.util.ResourceLocation;
@@ -30,6 +32,8 @@ public class BetterGiveCommandHandler {
     public static final String ARG_players = "players";
     public static final String ARG_item = "item";
     public static final String ARG_count = "count";
+
+    public static final String RESOURCE_LOCATION_CHARACTERS_DISALLOWED = "[^a-z0-9\\/._-]";
 
     @SubscribeEvent
     public static void onRegisterCommand(RegisterCommandsEvent event) {
@@ -62,9 +66,18 @@ public class BetterGiveCommandHandler {
     private static SuggestionProvider<CommandSource> createSuggester() {
         return (context, builder) -> {
             String stringRemainder = builder.getRemaining().toLowerCase(Locale.ROOT);
+            String[] bitParts = stringRemainder.split(RESOURCE_LOCATION_CHARACTERS_DISALLOWED, 0);
             for (ResourceLocation resourceLocation : ForgeRegistries.ITEMS.getKeys()) {
                 String resourceString = resourceLocation.toString();
-                if (resourceString.contains(stringRemainder)) {
+                boolean addSuggestion = true;
+                for (String part : bitParts) {
+                    if (!resourceString.contains(part)) {
+                        // skip this resourceLocation
+                        addSuggestion = false;
+                        break;
+                    }
+                }
+                if (addSuggestion) {
                     builder.suggest(resourceString);
                 }
             }
