@@ -21,6 +21,6 @@ No more having to know beforehand the modid of the mod with the item you want; n
 New! Did you start searching for a pressure plate and then realized you wanted a particular type of wood? You can now use irregular characters to do a "multi-part" search. For example:
   /bgive @s press*aca
 
-This will present to you anything with either "press" or "aca" in the name.
+This will present to you anything with both "press" and "aca" in the name.
 
 ![](https://i.imgur.com/N1Mvvgs.png)
