@@ -1,3 +1,11 @@
+1.16-1.2
+    hextun01
+        Feature: Enhanced the search capability with multi-part string search
+========
+1.16-1.1
+    hextun01
+        Fixed use of ObfuscationReflectionHelper to use SRG names, as nature intended
+========
 1.16-1.0
 	hextun01
 		Initial release
