@@ -19,7 +19,6 @@ You will be presented with a suggestion list of any item whose resource location
 No more having to know beforehand the modid of the mod with the item you want; no more having to type in the modid manually before you can start seeing all of the items matching your search.
 
 New! Did you start searching for a pressure plate and then realized you wanted a particular type of wood? You can now use irregular characters to do a "multi-part" search. For example:
-
   /bgive @s press*aca
 
 This will present to you anything with either "press" or "aca" in the name.
