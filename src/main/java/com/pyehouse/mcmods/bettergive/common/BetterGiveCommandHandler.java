@@ -34,6 +34,8 @@ public class BetterGiveCommandHandler {
     public static final String ARG_item = "item";
     public static final String ARG_count = "count";
 
+    public static final String RESOURCE_LOCATION_CHARACTERS_DISALLOWED = "[^a-z0-9\\/._-]";
+
     @SubscribeEvent
     public static void onRegisterCommand(RegisterCommandsEvent event) {
         final CommandDispatcher<CommandSourceStack> dispatcher = event.getDispatcher();
@@ -65,9 +67,18 @@ public class BetterGiveCommandHandler {
     private static SuggestionProvider<CommandSourceStack> createSuggester() {
         return (context, builder) -> {
             String stringRemainder = builder.getRemaining().toLowerCase(Locale.ROOT);
+            String[] bitParts = stringRemainder.split(RESOURCE_LOCATION_CHARACTERS_DISALLOWED, 0);
             for (ResourceLocation resourceLocation : ForgeRegistries.ITEMS.getKeys()) {
                 String resourceString = resourceLocation.toString();
-                if (resourceString.contains(stringRemainder)) {
+                boolean addSuggestion = true;
+                for (String part : bitParts) {
+                    if (!resourceString.contains(part)) {
+                        // skip this resourceLocation
+                        addSuggestion = false;
+                        break;
+                    }
+                }
+                if (addSuggestion) {
                     builder.suggest(resourceString);
                 }
             }
